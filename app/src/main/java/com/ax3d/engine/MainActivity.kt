@@ -1,6 +1,7 @@
 package com.ax3d.engine
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
@@ -8,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.*
 import com.ax3d.engine.ui.HomeScreen
+import com.ax3d.engine.ui.GameControllerOverlay
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
@@ -46,37 +48,27 @@ class MainActivity : Activity() {
         gameLabel.text = game?.name ?: "Aucun jeu ABX importé"
         library.text = importedGames.joinToString("\n") { it.name }
 
+        showHomeScreen()
+    }
+
+    private fun showHomeScreen() {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
         val home = HomeScreen(
             context = this,
             onOpenGame = { openPicker() },
             onCreateProject = {
-                Toast.makeText(
-                    this,
-                    "La création de projets sera développée ensuite.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, "Création de projets bientôt disponible.", Toast.LENGTH_SHORT).show()
             },
             onRun = { launchGame() },
             onAssistant = {
-                Toast.makeText(
-                    this,
-                    "Assistant AX3D : bientôt disponible.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, "Assistant AX3D bientôt disponible.", Toast.LENGTH_SHORT).show()
             },
             onSettings = {
-                Toast.makeText(
-                    this,
-                    "Réglages AX3D : bientôt disponibles.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, "Réglages AX3D bientôt disponibles.", Toast.LENGTH_SHORT).show()
             },
             onProjects = {
-                Toast.makeText(
-                    this,
-                    "Bibliothèque des projets : ouverture prochaine.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, "Bibliothèque des projets bientôt disponible.", Toast.LENGTH_SHORT).show()
             }
         )
 
@@ -87,6 +79,24 @@ class MainActivity : Activity() {
             )
         )
     }
+
+    private fun showGameScreen() {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+        val controls = GameControllerOverlay(
+            context = this,
+            onExit = {
+                nativeStop()
+                showHomeScreen()
+            },
+            onInput = { button, pressed ->
+                // Liaison avec les commandes natives à ajouter dans une prochaine étape.
+            }
+        )
+
+        setContentView(controls)
+    }
+
     private fun makeButton(label:String)=Button(this).apply {
         text=label; isAllCaps=false; setTextColor(-1); setBackgroundColor(0xFF292D3A.toInt())
     }
@@ -149,11 +159,8 @@ class MainActivity : Activity() {
                     val frame = nativeRunFrame()
 
                     runOnUiThread {
-                        Toast.makeText(
-                            this,
-                            frame,
-                            Toast.LENGTH_LONG
-                        ).show()
+                        showGameScreen()
+                        Toast.makeText(this, frame, Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
