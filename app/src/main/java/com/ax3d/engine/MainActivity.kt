@@ -131,6 +131,7 @@ class MainActivity : Activity() {
             } catch(e:Exception) { runOnUiThread { status.text="Import impossible : ${e.message}" } }
         }
     }
+
     private fun launchGame() {
         val f = game
 
@@ -147,27 +148,39 @@ class MainActivity : Activity() {
             try {
                 val result = nativeOpenGame(f.absolutePath)
 
-                runOnUiThread {
-                    Toast.makeText(
-                        this,
-                        result,
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+                if (result.contains("ABX GAME READY")) {
+                    runOnUiThread {
+                        showGameScreen()
+                        Toast.makeText(
+                            this,
+                            "Jeu chargé : ouverture des commandes AX3D.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
 
-                if (result.startsWith("ABX GAME READY")) {
                     val frame = nativeRunFrame()
 
                     runOnUiThread {
-                        showGameScreen()
-                        Toast.makeText(this, frame, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this,
+                            frame,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            result,
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             } catch (e: Exception) {
                 runOnUiThread {
                     Toast.makeText(
                         this,
-                        "Erreur : ${e.message}",
+                        "Erreur de lancement : ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
