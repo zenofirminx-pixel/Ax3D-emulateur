@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private val importedGames = mutableListOf<File>()
     private lateinit var status: TextView
     private lateinit var gameLabel: TextView
+    private lateinit var library: TextView
     companion object { init { System.loadLibrary("ax3d") }; const val PICK = 4101 }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,7 +43,7 @@ class MainActivity : Activity() {
         val stop = makeButton("ARRÊTER")
         root.addView(add); root.addView(start); root.addView(stop)
         root.addView(TextView(this).apply { text="BIBLIOTHÈQUE"; setTextColor(0xFFFFC857.toInt()); textSize=15f; setPadding(2,22,2,8) })
-        val library = TextView(this).apply { text="Aucun jeu dans la bibliothèque"; setTextColor(0xFFB9BBC7.toInt()); setPadding(12,10,12,10) }
+        library = TextView(this).apply { text="Aucun jeu dans la bibliothèque"; setTextColor(0xFFB9BBC7.toInt()); setPadding(12,10,12,10) }
         root.addView(library)
         val controls = LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(0,16,0,8) }
         listOf("◀", "▲", "▼", "▶", "✕", "○").forEach { label ->
