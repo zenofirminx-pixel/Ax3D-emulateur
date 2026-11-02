@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(ax3d LANGUAGES CXX)
+add_library(ax3d SHARED native-lib.cpp core.cpp iso_reader.cpp sfo.cpp elf_loader.cpp cpu/allegrex.cpp cso_reader.cpp abx_vm.cpp)
+target_include_directories(ax3d PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(ax3d PRIVATE -std=c++17 -O2 -Wall -Wextra)
+find_library(log-lib log)
+target_link_libraries(ax3d ${log-lib} z)
