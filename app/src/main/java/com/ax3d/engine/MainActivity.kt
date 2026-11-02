@@ -7,6 +7,7 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.widget.*
+import com.ax3d.engine.ui.HomeScreen
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
@@ -26,47 +27,65 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = 0xFF090A0E.toInt()
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(22,32,22,20)
-            setBackgroundColor(0xFF090A0E.toInt())
-        }
-        root.addView(TextView(this).apply { text="AX3D ENGINE"; textSize=28f; setTextColor(0xFFFFC857.toInt()) })
-        root.addView(TextView(this).apply { text="ABX Binary Runtime • Alpha 0.4"; setTextColor(0xFFB9BBC7.toInt()) })
-        gameLabel = TextView(this).apply {
-            text="Aucun jeu ABX importé"; textSize=17f; setTextColor(-1)
-            setPadding(16,24,16,24); setBackgroundColor(0xFF171923.toInt())
-        }
-        root.addView(gameLabel)
-        val add = makeButton("IMPORTER UN JEU .ABX")
-        val start = makeButton("CHARGER ET EXÉCUTER")
-        val stop = makeButton("ARRÊTER")
-        root.addView(add); root.addView(start); root.addView(stop)
-        root.addView(TextView(this).apply { text="BIBLIOTHÈQUE"; setTextColor(0xFFFFC857.toInt()); textSize=15f; setPadding(2,22,2,8) })
-        library = TextView(this).apply { text="Aucun jeu dans la bibliothèque"; setTextColor(0xFFB9BBC7.toInt()); setPadding(12,10,12,10) }
-        root.addView(library)
-        val controls = LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(0,16,0,8) }
-        listOf("◀", "▲", "▼", "▶", "✕", "○").forEach { label ->
-            val key = TextView(this).apply { text=label; textSize=20f; gravity=Gravity.CENTER; setTextColor(-1); setBackgroundColor(0xFF292D3A.toInt()); setPadding(14,12,14,12) }
-            key.setOnTouchListener { _, event -> event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_UP }
-            controls.addView(key, LinearLayout.LayoutParams(0, -2, 1f))
-        }
-        root.addView(controls)
-        importedGames.clear(); File(filesDir,"games").listFiles()?.filter { it.isFile }?.let { importedGames.addAll(it) }
-        if(importedGames.isNotEmpty()) library.text=importedGames.joinToString("\n") { it.name }
-        status = TextView(this).apply {
-            text="Prêt.\n"+nativeGetBuildInfo(); setTextColor(0xFFB9BBC7.toInt())
-            textSize=13f; setPadding(4,20,4,4)
-        }
-        root.addView(status)
-        root.addView(TextView(this).apply {
-            text="Format ABX v1 : signature AX3D, en-tête contrôlé, CRC32 et bytecode exécuté dans une VM isolée. Les jeux PSP ISO/CSO ne sont pas des jeux ABX et ne sont pas encore exécutables ici."
-            textSize=12f; setTextColor(0xFF9296A5.toInt()); setPadding(4,18,4,4)
-        })
-        setContentView(ScrollView(this).apply { addView(root) })
-        add.setOnClickListener { openPicker() }
-        start.setOnClickListener { launchGame() }
-        stop.setOnClickListener { worker.execute { nativeStop(); runOnUiThread { status.text="Émulation arrêtée." } } }
+
+        window.statusBarColor = 0xFF050A1D.toInt()
+        window.navigationBarColor = 0xFF050A1D.toInt()
+
+        importedGames.clear()
+        File(filesDir, "games").listFiles()
+            ?.filter { it.isFile && it.extension == "abx" }
+            ?.let { importedGames.addAll(it) }
+
+        game = importedGames.lastOrNull()
+
+        status = TextView(this)
+        gameLabel = TextView(this)
+        library = TextView(this)
+
+        status.text = "Prêt.\n" + nativeGetBuildInfo()
+        gameLabel.text = game?.name ?: "Aucun jeu ABX importé"
+        library.text = importedGames.joinToString("\n") { it.name }
+
+        val home = HomeScreen(
+            context = this,
+            onOpenGame = { openPicker() },
+            onCreateProject = {
+                Toast.makeText(
+                    this,
+                    "La création de projets sera développée ensuite.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onRun = { launchGame() },
+            onAssistant = {
+                Toast.makeText(
+                    this,
+                    "Assistant AX3D : bientôt disponible.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onSettings = {
+                Toast.makeText(
+                    this,
+                    "Réglages AX3D : bientôt disponibles.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onProjects = {
+                Toast.makeText(
+                    this,
+                    "Bibliothèque des projets : ouverture prochaine.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        )
+
+        setContentView(
+            home.build(
+                nativeInfo = nativeGetBuildInfo(),
+                recentProjects = importedGames.map { it.name }.reversed()
+            )
+        )
     }
     private fun makeButton(label:String)=Button(this).apply {
         text=label; isAllCaps=false; setTextColor(-1); setBackgroundColor(0xFF292D3A.toInt())
@@ -103,16 +122,51 @@ class MainActivity : Activity() {
         }
     }
     private fun launchGame() {
-        val f=game
-        if(f==null || !f.exists()){status.text="Importez d'abord un fichier .abx.";return}
+        val f = game
+
+        if (f == null || !f.exists()) {
+            Toast.makeText(
+                this,
+                "Importez d'abord un fichier .abx.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         worker.execute {
-            val result=nativeOpenGame(f.absolutePath)
-            runOnUiThread { status.text=result }
-            if(result.startsWith("ABX GAME READY")) {
-                val frame=nativeRunFrame()
-                runOnUiThread { status.append("\n\n$frame") }
+            try {
+                val result = nativeOpenGame(f.absolutePath)
+
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        result,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+                if (result.startsWith("ABX GAME READY")) {
+                    val frame = nativeRunFrame()
+
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            frame,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Erreur : ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }
+
     override fun onDestroy(){ worker.execute{nativeStop()};worker.shutdown();super.onDestroy() }
 }
