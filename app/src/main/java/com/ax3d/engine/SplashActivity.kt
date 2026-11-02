@@ -80,7 +80,7 @@ class SplashActivity : Activity() {
             // Planète
             paint.shader = RadialGradient(
                 cx - 35f, cy - 45f, w * 0.29f,
-                intArrayOf(0xFF4DDAFF, 0xFF1263B8, 0xFF071B45),
+                intArrayOf(0xFF4DDAFF.toInt(), 0xFF1263B8.toInt(), 0xFF071B45.toInt()),
                 null, Shader.TileMode.CLAMP
             )
             canvas.drawCircle(cx, cy, w * 0.25f, paint)
