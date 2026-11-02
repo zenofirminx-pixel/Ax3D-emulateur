@@ -1,4 +1,4 @@
-name: AX3D Android build
+name: AX3D Android Build
 
 on:
   push:
@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -25,14 +25,15 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
+      - name: Accept Android licenses
+        run: yes | sdkmanager --licenses
 
-      - name: Install Android SDK components
+      - name: Install Android components
         run: |
           sdkmanager --install \
-            "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
             "ndk;27.0.12077973" \
@@ -43,13 +44,10 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Check Gradle
-        run: gradle --version
-
       - name: Build AX3D APK
         run: gradle --no-daemon :app:assembleDebug
 
-      - name: Upload AX3D APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AX3D-Engine-debug-apk
