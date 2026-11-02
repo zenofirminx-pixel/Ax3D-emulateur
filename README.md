@@ -1,26 +1,20 @@
-# AX3D Engine Alpha 0.4
+# l'Infinity — Android
 
-Projet Android Kotlin + C++17. Cette version ajoute le format binaire **AX3D Binary Executable (ABX) v1** et son interpréteur sandboxé.
+Application Android native Kotlin qui se connecte à `https://aur-x-backend.vercel.app/api/chat` avec une requête POST et lit les événements Server-Sent Events (SSE) au fil de l'eau.
 
-## Format ABX
-- Signature obligatoire `AX3D` (octets `41 58 33 44`).
-- En-tête 64 octets, version 1, UUID de jeu, tailles et CRC32 du bytecode.
-- Bytecode interprété par la VM C++; aucun octet ABX n'est exécuté comme code machine ARM.
-- Limites : fichier 64 MiB, code 16 MiB, ressources 48 MiB, pile et mémoire VM bornées.
+## Contenu
+- Interface de chat sombre, futuriste et spatiale.
+- Bulles séparées pour l'utilisateur et l'assistant.
+- Affichage progressif des fragments SSE.
+- Historique de la conversation conservé en mémoire pendant la session.
+- Icône vectorielle Infinity.
+- Compilation APK debug par GitHub Actions.
 
-## Créer un jeu ABX depuis Termux
-Depuis la racine du dépôt :
-```sh
-mkdir -p mygame
-printf '\\x01\\x2a\\x00\\x00\\x00\\x20\\xff' > mygame/hello.abxcode
-python3 tools/create_abx.py mygame/hello.abxcode mygame/Hello-AX3D.abx
-```
-Ce programme pousse 42, l'affiche dans le journal de diagnostic puis s'arrête. Importer le `.abx` dans l'application et toucher « CHARGER ET EXÉCUTER ».
+## Contrat réseau utilisé
+La requête POST envoie `message`, `history`, `messages` et `stream: true`, avec `Accept: text/event-stream, application/json`.
+Le lecteur accepte les événements SSE `data:` avec `[DONE]`, les formats de fragments OpenAI (`choices[0].delta.content`) et plusieurs formats courants (`token`, `content`, `text`, `response`).
 
-Opcodes v1 : `00` NOP, `01+i32` PUSH, `10` NEG, `11` ADD, `12` SUB, `13` MUL, `14` DIV, `20` PRINT, `21` LOAD via pile, `22+i32` STORE, `23+i32` LOAD direct, `30` MOVE_X diagnostic, `31` DRAW_OBJECT diagnostic, `32+i32` JMP, `40+i32` JNZ, `FF` HALT. Voir `ABX-FORMAT.md`.
+**À vérifier avec le backend :** le nom exact du champ d'entrée et le format SSE doivent correspondre à l'implémentation actuellement déployée. Si le serveur n'accepte pas `stream: true` ou attend un autre schéma, il faudra adapter `InfinityApi.kt`.
 
-## Construire
-Ouvrir dans Android Studio ou lancer le workflow GitHub Actions `.github/workflows/android.yml`. La présence du workflow ne garantit pas le build : vérifier le résultat Actions et l'APK généré.
-
-## Limites honnêtes
-ABX v1 est une VM de bytecode minimaliste. Les événements MOVE_X/DRAW_OBJECT sont actuellement des diagnostics, pas un rendu 3D. Il ne s'agit pas d'un runtime de jeux 3D complet. L'émulation PSP ISO/CSO n'est pas prise en charge par ABX et reste expérimentale dans le code séparé.
+## Compilation
+Ouvrir le dépôt avec Android Studio ou pousser sur GitHub. Le workflow `.github/workflows/android.yml` construit `app-debug.apk`.

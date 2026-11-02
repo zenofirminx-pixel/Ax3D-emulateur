@@ -1,23 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:theme="@style/AX3DTheme"
-        android:label="AX3D Engine"
-        android:icon="@mipmap/ic_launcher"
-        android:allowBackup="false">
-
+        android:allowBackup="true"
+        android:label="l'Infinity"
+        android:icon="@drawable/ic_infinity"
+        android:roundIcon="@drawable/ic_infinity"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".SplashActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
     </application>
 </manifest>
